@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="card">
-    <h2>Create Short URL</h2>
-    <p>Paste a long URL and get a compact shareable link.</p>
+<section class="card card-hero">
+    <div class="card-heading">
+        <h2>Shorten Links With Control</h2>
+        <p>Create branded short links, set expiry, and track performance from one clean dashboard.</p>
+    </div>
 
     <form id="shorten-form" class="form-grid">
         <input
@@ -22,9 +24,10 @@
             type="datetime-local"
             placeholder="Expiry (optional)"
         />
-        <button type="submit">Shorten URL</button>
+        <button type="submit">Generate Link</button>
     </form>
 
+    <p class="helper-text">Tip: Use custom code to create memorable links like marketing-offer or docs-quickstart.</p>
     <div id="result" class="result hidden"></div>
 </section>
 {% endblock %}
