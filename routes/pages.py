@@ -14,3 +14,8 @@ def home(request: Request):
 @router.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
+
+
+@router.get("/auth", response_class=HTMLResponse)
+def auth_page(request: Request):
+    return templates.TemplateResponse("auth.html", {"request": request})

@@ -1,6 +1,6 @@
 # FastAPI URL Shortener
 
-A beginner-friendly, resume-ready URL shortener project built with FastAPI, SQLite, SQL-focused queries, and a simple Jinja2 frontend.
+A beginner-friendly, resume-ready URL shortener project built with FastAPI, SQLite, SQL-focused queries, JWT auth, and a simple Jinja2 frontend.
 
 ## 1) Project Structure
 
@@ -33,72 +33,131 @@ Open:
 
 ## 4) API Endpoints
 
+- POST /auth/register
+- POST /auth/login
 - POST /shorten
 - GET /{short_code}
 - GET /urls
 - DELETE /urls/{id}
 - GET /urls/top?limit=5
+- GET /analytics/summary
+- GET /analytics/top?limit=5
+- GET /analytics/daily
 
 ## 5) SQL Queries Used (Core Focus)
 
-1. Insert URL:
+1. Register user:
 
-INSERT INTO urls (original_url, short_code, clicks)
-VALUES (:original_url, :short_code, 0)
+INSERT INTO users (email, password_hash)
+VALUES (:email, :password_hash)
 
-Purpose: saves a new long URL with generated short code and initial click count.
+Purpose: creates an account and stores password hash.
 
-2. Update click count:
+2. Insert URL for a specific user:
+
+INSERT INTO urls (original_url, short_code, clicks, user_id, expires_at)
+VALUES (:original_url, :short_code, 0, :user_id, :expires_at)
+
+Purpose: saves a URL owned by one user with optional expiry.
+
+3. Update click count:
 
 UPDATE urls SET clicks = clicks + 1 WHERE id = :id
 
 Purpose: increments clicks every time someone opens a short URL.
 
-3. Fetch all URLs:
+4. Fetch only current user's URLs:
 
-SELECT id, original_url, short_code, clicks, created_at
+SELECT id, original_url, short_code, clicks, created_at, expires_at
 FROM urls
+WHERE user_id = :user_id
 ORDER BY created_at DESC
 
-Purpose: fills dashboard table with latest entries first.
+Purpose: dashboard shows only the logged-in user's links.
 
-4. Fetch top clicked URLs:
+5. Top 5 most clicked URLs (analytics):
 
-SELECT id, original_url, short_code, clicks, created_at
+SELECT short_code, original_url, clicks
 FROM urls
+WHERE user_id = :user_id
 ORDER BY clicks DESC, created_at DESC
 LIMIT :limit
 
-Purpose: analytics view showing most popular links.
+Purpose: shows best performing links for one user.
+
+6. Links created per day (GROUP BY analytics):
+
+SELECT DATE(created_at) AS day, COUNT(*) AS links_created
+FROM urls
+WHERE user_id = :user_id
+GROUP BY DATE(created_at)
+ORDER BY day DESC
+
+Purpose: daily creation trend for dashboard analytics.
+
+7. Expiry check during redirect:
+
+SELECT CASE
+   WHEN expires_at IS NOT NULL AND expires_at <= CURRENT_TIMESTAMP THEN 1
+   ELSE 0
+END AS is_expired
+FROM urls
+WHERE id = :id
+
+Purpose: block redirect if link has expired.
 
 ## 6) Browser + Swagger Testing
+
+Authentication testing:
+
+1. Open /auth.
+2. Register with email + password.
+3. Login and verify token-based access works.
 
 Home page testing:
 
 1. Open home page.
-2. Enter a URL like https://www.python.org.
-3. Click Shorten URL.
-4. Open generated short URL and verify redirect works.
+2. Enter URL like https://www.python.org.
+3. (Optional) Enter custom short code.
+4. (Optional) Set expiry date/time.
+5. Click Shorten URL.
+6. Open generated short URL and verify redirect works.
 
 Dashboard testing:
 
 1. Open dashboard.
-2. Verify row appears with clicks and created time.
+2. Verify only your URLs are visible.
+3. Verify expiry status column shows Active/Expired.
+4. Verify analytics cards show totals, top URLs, and links/day.
 3. Click short URL multiple times and refresh dashboard to verify click increments.
 4. Test delete button.
 
 Swagger testing:
 
 1. Open /docs.
-2. Test POST /shorten with body:
+2. Test POST /auth/register, then /auth/login and copy access_token.
+3. Click Authorize and paste: Bearer <token>
+4. Test POST /shorten with body:
 {
-  "original_url": "https://fastapi.tiangolo.com"
+   "original_url": "https://fastapi.tiangolo.com",
+   "custom_code": "my-fastapi-link",
+   "expires_at": "2030-12-31T23:59:59"
 }
-3. Test GET /urls.
-4. Test DELETE /urls/{id}.
-5. Test GET /urls/top.
+5. Test GET /urls.
+6. Test DELETE /urls/{id}.
+7. Test GET /analytics/summary, /analytics/top, /analytics/daily.
 
 ## 7) Render Deployment (Step-by-Step)
+
+Option A (recommended): One-click blueprint deploy using render.yaml
+
+1. Keep render.yaml in project root.
+2. Push code to GitHub.
+3. In Render, click New + > Blueprint.
+4. Select this repository.
+5. Render will auto-read render.yaml and create service + disk + env vars.
+
+Option B: Manual web service setup
 
 1. Push this project to GitHub.
 2. Sign in to Render and click New + > Web Service.
@@ -109,10 +168,22 @@ Swagger testing:
    - Start Command: uvicorn app:app --host 0.0.0.0 --port 10000
 5. Add environment variable (optional):
    - PYTHON_VERSION = 3.11.9
+   - SECRET_KEY = your-long-random-secret
+   - DATABASE_URL = sqlite:////opt/render/project/src/data/shortener.db
+6. Add a Persistent Disk:
+   - Name: shortener-data
+   - Mount Path: /opt/render/project/src/data
+   - Size: 1 GB
 6. Click Create Web Service.
 7. After deploy completes, open the Render URL and test:
    - /
    - /dashboard
    - /docs
 
-Note: SQLite on Render may reset if the service restarts, because filesystem can be ephemeral on free plans. For production, move to a managed database.
+Note: This project now supports DATABASE_URL from environment, so moving to PostgreSQL later is straightforward.
+
+## 8) Session Expiry Behavior
+
+- Frontend now checks JWT expiry on every protected action.
+- If token is expired, user is logged out automatically and redirected to /auth.
+- If API returns 401, session is cleared and user is redirected to login.

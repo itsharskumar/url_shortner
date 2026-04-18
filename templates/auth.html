@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="card auth-card">
+    <h2>Login / Register</h2>
+    <p>Create an account, then login to manage your own links.</p>
+
+    <div class="auth-grid">
+        <form id="register-form" class="auth-form">
+            <h3>Register</h3>
+            <input id="register-email" type="email" placeholder="you@example.com" required />
+            <input id="register-password" type="password" placeholder="Password (min 6 chars)" required />
+            <button type="submit">Register</button>
+        </form>
+
+        <form id="login-form" class="auth-form">
+            <h3>Login</h3>
+            <input id="login-email" type="email" placeholder="you@example.com" required />
+            <input id="login-password" type="password" placeholder="Password" required />
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <div id="auth-result" class="result hidden"></div>
+</section>
+{% endblock %}

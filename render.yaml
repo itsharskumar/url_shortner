@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: fastapi-url-shortener
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:////opt/render/project/src/data/shortener.db
+    disks:
+      - name: shortener-data
+        mountPath: /opt/render/project/src/data
+        sizeGB: 1

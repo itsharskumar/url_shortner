@@ -44,6 +44,12 @@ nav a {
     font-weight: 600;
 }
 
+nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .container {
     max-width: 960px;
     margin: 24px auto;
@@ -60,7 +66,7 @@ nav a {
 
 .form-grid {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 2fr 1fr 1fr auto;
     gap: 10px;
     margin-top: 14px;
 }
@@ -125,13 +131,75 @@ td a {
     background: var(--danger);
 }
 
+.ghost-btn {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    padding: 8px 10px;
+}
+
+.auth-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.analytics-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px;
+    background: #fff8ef;
+}
+
+.muted {
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+.pill {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.pill.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.pill.expired {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
 @media (max-width: 720px) {
     .form-grid {
         grid-template-columns: 1fr;
     }
 
+    .auth-grid {
+        grid-template-columns: 1fr;
+    }
+
     nav a {
-        margin-left: 10px;
         font-size: 0.9rem;
     }
 }
