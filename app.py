@@ -1,8 +1,8 @@
+from datetime import datetime, timezone
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from database import get_db, init_db
 from routes.api import router as api_router
@@ -23,45 +23,19 @@ def startup_event() -> None:
 
 
 @app.get("/{short_code}")
-def redirect_to_original(short_code: str, db: Session = Depends(get_db)):
-    row = db.execute(
-        text(
-            """
-            SELECT id, original_url, expires_at
-            FROM urls
-            WHERE short_code = :short_code
-            LIMIT 1
-            """
-        ),
-        {"short_code": short_code},
-    ).mappings().first()
+def redirect_to_original(short_code: str, db=Depends(get_db)):
+    url_doc = db.urls.find_one({"short_code": short_code})
 
-    if not row:
+    if not url_doc:
         raise HTTPException(status_code=404, detail="Short URL not found")
 
-    expiry_check = db.execute(
-        text(
-            """
-            SELECT CASE
-                WHEN expires_at IS NOT NULL AND expires_at <= CURRENT_TIMESTAMP THEN 1
-                ELSE 0
-            END AS is_expired
-            FROM urls
-            WHERE id = :id
-            """
-        ),
-        {"id": row["id"]},
-    ).mappings().first()
-    if expiry_check and expiry_check["is_expired"]:
+    expires_at = url_doc.get("expires_at")
+    if expires_at and expires_at <= datetime.now(timezone.utc):
         return HTMLResponse(
             "<h2>Link expired</h2><p>This short URL is no longer active.</p>",
             status_code=410,
         )
 
-    db.execute(
-        text("UPDATE urls SET clicks = clicks + 1 WHERE id = :id"),
-        {"id": row["id"]},
-    )
-    db.commit()
+    db.urls.update_one({"_id": url_doc["_id"]}, {"$inc": {"clicks": 1}})
 
-    return RedirectResponse(url=row["original_url"], status_code=307)
+    return RedirectResponse(url=url_doc["original_url"], status_code=307)

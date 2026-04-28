@@ -10,9 +10,7 @@ services:
         value: 3.11.9
       - key: SECRET_KEY
         generateValue: true
-      - key: DATABASE_URL
-        value: sqlite:////opt/render/project/src/data/shortener.db
-    disks:
-      - name: shortener-data
-        mountPath: /opt/render/project/src/data
-        sizeGB: 1
+      - key: MONGODB_URI
+        value: mongodb://user:password@host:27017
+      - key: MONGODB_DB
+        value: shortener

@@ -1,28 +1,25 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, text
-from sqlalchemy.orm import relationship
+from datetime import datetime
 
-from database import Base
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, nullable=False, index=True)
-    password_hash = Column(String, nullable=False)
-    created_at = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
-    urls = relationship("URL", back_populates="owner", cascade="all, delete-orphan")
+from bson import ObjectId
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-class URL(Base):
-    __tablename__ = "urls"
+class UserDoc(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    id = Column(Integer, primary_key=True, index=True)
-    original_url = Column(String, nullable=False)
-    short_code = Column(String, unique=True, nullable=False, index=True)
-    clicks = Column(Integer, nullable=False, server_default=text("0"))
-    created_at = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
-    expires_at = Column(DateTime, nullable=True)
+    id: ObjectId | str = Field(alias="_id")
+    email: EmailStr
+    password_hash: str
+    created_at: datetime
 
-    owner = relationship("User", back_populates="urls")
+
+class UrlDoc(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    id: ObjectId | str = Field(alias="_id")
+    original_url: str
+    short_code: str
+    clicks: int = 0
+    created_at: datetime
+    user_id: str
+    expires_at: datetime | None = None
