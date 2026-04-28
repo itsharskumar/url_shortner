@@ -8,8 +8,6 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from database import get_db
 
@@ -45,8 +43,8 @@ def create_access_token(subject: str, expires_delta: Optional[timedelta] = None)
 
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-    db: Session = Depends(get_db),
-) -> int:
+    db=Depends(get_db),
+) -> str:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -64,10 +62,8 @@ def get_current_user_id(
     except JWTError as exc:
         raise credentials_exception from exc
 
-    user = db.execute(
-        text("SELECT id FROM users WHERE email = :email LIMIT 1"), {"email": email}
-    ).mappings().first()
+    user = db.users.find_one({"email": email}, {"_id": 1})
     if not user:
         raise credentials_exception
 
-    return int(user["id"])
+    return str(user["_id"])
